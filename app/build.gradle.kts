@@ -17,6 +17,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // AndroidStudio 4.0 ~
+    buildFeatures{
+        viewBinding = true
+        compose = true
+        dataBinding = true
+    }
+
+
     buildTypes {
         release {
             isMinifyEnabled = false
