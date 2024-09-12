@@ -17,13 +17,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // AndroidStudio 4.0 ~
-    buildFeatures{
-        viewBinding = true
-        compose = true
-        dataBinding = true
-    }
+//이렇게 해서 오류가 계속 나던거였어 ; 계속 이렇게 했었는데, 버전이 다운그레이드 된건가,,,
+//    // AndroidStudio 4.0 ~
+//    buildFeatures{
+//        viewBinding = true
+//        compose = true
+//        dataBinding = true
 
+    // 이렇게 데이터 바인딩... 
+    dataBinding{
+        enable = true
+    }
 
     buildTypes {
         release {
