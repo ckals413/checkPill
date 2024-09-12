@@ -45,7 +45,10 @@ class ResultPillNumActivity : AppCompatActivity() {
             }
         }
 
+        //확인버튼
         binding.checkCombinationButton.setOnClickListener {
+            finish()
+
 //            val bottomSheetFragment3 = BottomSheetFragment3()
 //            val fileUri = Uri.fromFile(File(cacheDir, "captured_image.png"))
 //            val bundle = Bundle()
