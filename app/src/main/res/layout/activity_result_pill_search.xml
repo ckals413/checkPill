@@ -40,18 +40,20 @@
                 />
 
     <TextView
+        android:id="@+id/detect_result_TV"
         android:layout_marginTop="40dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="인식 된 알약은 xxxxxx 입니다."
-        android:textSize="20sp"
+        android:textSize="10sp"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@+id/medicine_iv"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         />
 
-        <androidx.appcompat.widget.AppCompatButton
+
+    <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/check_combination_button"
             android:layout_width="352dp"
             android:layout_height="68dp"
