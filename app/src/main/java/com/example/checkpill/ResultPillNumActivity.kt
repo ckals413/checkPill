@@ -1,61 +1,46 @@
 package com.example.checkpill
 
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.RectF
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.example.checkpill.databinding.ActivityResultPillNumBinding
-import java.io.File
-import java.io.FileOutputStream
+import org.tensorflow.lite.Interpreter
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.channels.FileChannel
 
 class ResultPillNumActivity : AppCompatActivity() {
     lateinit var binding: ActivityResultPillNumBinding
-    private var selectedMedicineName: String? = null
-
-    private val REQUEST_PERMISSIONS = 1
-    private val REQUEST_IMAGE_CAPTURE = 2
+    private lateinit var tflite: Interpreter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityResultPillNumBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Check for permissions and set up listeners
-        checkPermissions()
+        // Load the YOLO model (TFLite)
+        loadModel()
 
-        val imageBitmap = intent.getParcelableExtra<Bitmap>("imageBitmap")
-        imageBitmap?.let {
-            binding.medicineIv.setImageBitmap(it)
+        // 이미지 URI를 받아서 이미지 표시
+        val imageUri = intent.getStringExtra("imageUri")
+        imageUri?.let {
+            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, Uri.parse(it))
+            binding.medicineIv.setImageBitmap(bitmap)
 
-            // Save the bitmap as a PNG file and upload it
-            val pngFile = saveBitmapAsPng(it)
-            //uploadImageToServer(pngFile)
+            // YOLO 모델을 사용하여 알약 개수 계산
+            val pillCount = detectPills(bitmap)
+
+            // 인식된 알약 개수를 표시
+            binding.detectResultNumTV.text = "인식된 알약의 개수: $pillCount"
         }
 
-        binding.medicineIv.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                dispatchTakePictureIntent()
-            } else {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_PERMISSIONS)
-            }
-        }
-
-        //확인버튼
+        // 확인 버튼
         binding.checkCombinationButton.setOnClickListener {
             finish()
-
-//            val bottomSheetFragment3 = BottomSheetFragment3()
-//            val fileUri = Uri.fromFile(File(cacheDir, "captured_image.png"))
-//            val bundle = Bundle()
-//            bundle.putString("photoUri", fileUri.toString())
-//            bottomSheetFragment3.arguments = bundle
-//            bottomSheetFragment3.show(supportFragmentManager, "BottomSheetDialog3")
-
         }
 
         binding.backButton.setOnClickListener {
@@ -63,91 +48,68 @@ class ResultPillNumActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkPermissions() {
-        val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
-        if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
-            ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSIONS)
+    // YOLO 모델 로딩 함수
+    private fun loadModel() {
+        try {
+            // TFLite 모델 파일 로드
+            val modelFile = assets.openFd("best-fp16.tflite")
+            val inputStream = FileInputStream(modelFile.fileDescriptor)
+            val modelBuffer = inputStream.channel.map(FileChannel.MapMode.READ_ONLY, modelFile.startOffset, modelFile.declaredLength)
+            tflite = Interpreter(modelBuffer)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
-    private fun dispatchTakePictureIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (takePictureIntent.resolveActivity(packageManager) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
-        }
+    // YOLO 모델을 사용하여 알약을 인식하는 함수
+    private fun detectPills(bitmap: Bitmap): Int {
+        // 이미지를 YOLO 모델 입력 형식에 맞게 변환
+        val inputSize = 640 // 모델이 학습된 입력 크기
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, false)
+        val inputBuffer = convertBitmapToByteBuffer(resizedBitmap)
+
+        // YOLO 모델 추론
+        val output = Array(1) { Array(25200) { FloatArray(16) } }
+
+        // 추론을 실행
+        tflite.run(inputBuffer, output)
+
+        // 알약 개수 계산 (confidence 값이 일정 수준 이상인 박스만 선택)
+        val pillCount = processOutput(output)
+
+        return pillCount
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_PERMISSIONS) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                dispatchTakePictureIntent()
+    // 비트맵을 ByteBuffer로 변환하는 함수
+    private fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
+        val inputSize = 640
+        val byteBuffer = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * 4)
+        byteBuffer.order(ByteOrder.nativeOrder())
+
+        val intValues = IntArray(inputSize * inputSize)
+        bitmap.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+
+        for (i in intValues.indices) {
+            val value = intValues[i]
+            byteBuffer.putFloat(((value shr 16) and 0xFF) / 255.0f) // Red
+            byteBuffer.putFloat(((value shr 8) and 0xFF) / 255.0f)  // Green
+            byteBuffer.putFloat((value and 0xFF) / 255.0f)          // Blue
+        }
+        return byteBuffer
+    }
+
+    // 추론 결과 처리 및 알약 개수 계산
+    private fun processOutput(output: Array<Array<FloatArray>>): Int {
+        var pillCount = 0
+        val confidenceThreshold = 0.6f  // Confidence threshold for counting detections
+
+        for (detection in output[0]) {
+            val confidence = detection[4]
+            if (confidence > confidenceThreshold) {
+                // 알약으로 인식된 개수 증가
+                pillCount++
             }
         }
+        return pillCount
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK && data != null) {
-            val imageBitmap: Bitmap? = data.extras?.get("data") as? Bitmap
-
-            imageBitmap?.let {
-                binding.medicineIv.setImageBitmap(it)
-
-                // Save the bitmap as a PNG file and upload it
-                val pngFile = saveBitmapAsPng(it)
-                //uploadImageToServer(pngFile)
-            }
-        }
-    }
-
-    private fun saveBitmapAsPng(bitmap: Bitmap): File {
-        val pngFile = File(cacheDir, "captured_image.png")
-        FileOutputStream(pngFile).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-        }
-        return pngFile
-    }
-
-//    private fun uploadImageToServer(file: File) {
-//        val requestFile = RequestBody.create("image/png".toMediaTypeOrNull(), file)
-//        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-//
-//        val retrofit = getRetrofit()
-//        val service = retrofit.create(CameraService::class.java)
-//        val call = service.uploadImage(body)
-//
-//        call.enqueue(object : Callback<List<CameraMedicineResponse>> {
-//            override fun onResponse(call: Call<List<CameraMedicineResponse>>, response: ImageProcessor.Response<List<CameraMedicineResponse>>) {
-//                if (response.isSuccessful) {
-//                    val cameraMedicineResponses = response.body()
-//
-//                    val medicines = cameraMedicineResponses?.map { response ->
-//                        MedicineList(
-//                            imageResId = response.imageUrl,
-//                            name = response.name,
-//                            dosage = response.dosage ?: "",
-//                            effects = response.benefit ?: "",
-//                            howToEat = response.dosage ?: ""
-//                        )
-//                    } ?: emptyList()
-//
-//                    selectedMedicineName = cameraMedicineResponses?.firstOrNull {
-//                        it.name.contains("타이레놀") ||
-//                                it.name.contains("초당아스피린장용정") ||
-//                                it.name.contains("페니라민정")
-//                    }?.name
-//
-//                    val listAdapter = MedicineListAdapter(medicines)
-//                    binding.medicineInfoRecyclerView.adapter = listAdapter
-//                } else {
-//                    Toast.makeText(this@SearchResultActivity, "Error: ${response.errorBody()?.string()}", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<List<CameraMedicineResponse>>, t: Throwable) {
-//                Toast.makeText(this@SearchResultActivity, "Request failed: ${t.message}", Toast.LENGTH_SHORT).show()
-//            }
-//        })
 }
-
