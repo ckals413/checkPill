@@ -102,6 +102,10 @@ class ResultPillSearchActivity : AppCompatActivity() {
 
         try {
             tflite.run(input, output)
+            // 모델 출력을 확인하는 로그
+            for (detection in output[0]) {
+                Log.d("ModelOutput", "Detection: ${detection.contentToString()}")
+            }
             processResult(output)
             Log.d("ResultPillSearchActivity!", "모델 추론 성공")
         } catch (e: Exception) {
@@ -110,20 +114,46 @@ class ResultPillSearchActivity : AppCompatActivity() {
         }
     }
 
+
+    // 클래스 인덱스를 알약 이름과 매핑하는 Map 생성
+    val pillClasses = mapOf(
+        0 to "A",
+        1 to "B",
+        2 to "C",
+        3 to "D",
+        4 to "E",
+        5 to "F",
+        6 to "G",
+        7 to "H",
+        8 to "I",
+        9 to "J",
+        10 to "K"
+    )
+
     private fun processResult(output: Array<Array<FloatArray>>) {
         val detectedObjects = ArrayList<String>()
+
         for (detection in output[0]) {
-            val confidence = detection[4]
-            if (confidence > 0.5) {
-                val label = detection[5]
-                detectedObjects.add("Detected class: $label with confidence $confidence")
+            val confidence = detection[4] // 객체의 신뢰도
+            if (confidence > 0.6) {  // 임계값 0.5 이상일 경우
+                // 탐지된 객체의 클래스 확률을 추출 (detection[5] 이후는 클래스 확률)
+                val classProbabilities = detection.copyOfRange(5, detection.size)
+                val classIndex = classProbabilities.indices.maxByOrNull { classProbabilities[it] } ?: 0
+                val pillName = pillClasses[classIndex] ?: "Unknown"  // 클래스 인덱스를 이름으로 변환
+
+                Log.d("ClassIndex", "Detected class index: $classIndex, name: $pillName")
+                detectedObjects.add("Detected pill: $pillName with confidence $confidence")
             }
         }
 
+        // 탐지된 결과를 화면에 표시
         runOnUiThread {
             binding.detectResultTV.text = detectedObjects.joinToString("\n")
         }
     }
+
+
+
 
     private fun checkPermissions() {
         val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
