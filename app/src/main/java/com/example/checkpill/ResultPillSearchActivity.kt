@@ -130,26 +130,86 @@ class ResultPillSearchActivity : AppCompatActivity() {
         10 to "K"
     )
 
+
     private fun processResult(output: Array<Array<FloatArray>>) {
-        val detectedObjects = ArrayList<String>()
+        val filteredDetections = ArrayList<FloatArray>()
 
+        // 탐지 결과 필터링: confidence 값이 높은 것만 선택 (임계값 0.6 이상)
         for (detection in output[0]) {
-            val confidence = detection[4] // 객체의 신뢰도
-            if (confidence > 0.6) {  // 임계값 0.5 이상일 경우
-                // 탐지된 객체의 클래스 확률을 추출 (detection[5] 이후는 클래스 확률)
-                val classProbabilities = detection.copyOfRange(5, detection.size)
-                val classIndex = classProbabilities.indices.maxByOrNull { classProbabilities[it] } ?: 0
-                val pillName = pillClasses[classIndex] ?: "Unknown"  // 클래스 인덱스를 이름으로 변환
-
-                Log.d("ClassIndex", "Detected class index: $classIndex, name: $pillName")
-                detectedObjects.add("Detected pill: $pillName with confidence $confidence")
+            val confidence = detection[4]
+            if (confidence > 0.6) {
+                filteredDetections.add(detection)
             }
         }
 
-        // 탐지된 결과를 화면에 표시
-        runOnUiThread {
-            binding.detectResultTV.text = detectedObjects.joinToString("\n")
+        // NMS 적용: 중복 탐지 제거
+        val nmsResults = applyNMS(filteredDetections)
+
+        // NMS 후 신뢰도가 가장 높은 탐지 결과 하나만 선택
+        val bestDetection = nmsResults.maxByOrNull { it[4] }  // 신뢰도(confidence)가 가장 높은 결과 선택
+
+        // 신뢰도가 가장 높은 탐지 결과가 있을 경우 처리
+        bestDetection?.let { detection ->
+            val classProbabilities = detection.copyOfRange(5, detection.size)
+            val classIndex = classProbabilities.indices.maxByOrNull { classProbabilities[it] } ?: 0
+            val pillName = pillClasses[classIndex] ?: "Unknown"
+            val confidence = detection[4]
+
+            Log.d("ClassIndex", "Detected class index: $classIndex, name: $pillName")
+
+            // 탐지된 결과를 화면에 표시
+            runOnUiThread {
+                binding.detectResultTV.text = "탐지된 알약: $pillName \n 신뢰도 $confidence 로 탐지되었습니다."
+            }
+        } ?: run {
+            // 탐지된 결과가 없을 경우
+            runOnUiThread {
+                binding.detectResultTV.text = "알약이 탐지되지 않았습니다."
+            }
         }
+    }
+
+
+    // Non-Maximum Suppression 함수
+    private fun applyNMS(detections: ArrayList<FloatArray>, iouThreshold: Float = 0.5f): ArrayList<FloatArray> {
+        val result = ArrayList<FloatArray>()
+
+        // 신뢰도 순으로 정렬
+        val sortedDetections = detections.sortedByDescending { it[4] }
+
+        val selectedDetections = mutableListOf<FloatArray>()
+
+        for (detection in sortedDetections) {
+            var shouldSelect = true
+            for (selected in selectedDetections) {
+                val iou = calculateIoU(detection, selected)
+                if (iou > iouThreshold) {
+                    shouldSelect = false
+                    break
+                }
+            }
+            if (shouldSelect) {
+                selectedDetections.add(detection)
+            }
+        }
+
+        result.addAll(selectedDetections)
+        return result
+    }
+
+    // IoU 계산 함수 (두 객체의 경계 상자 사이의 IoU를 계산)
+    private fun calculateIoU(boxA: FloatArray, boxB: FloatArray): Float {
+        val xA = maxOf(boxA[0], boxB[0])
+        val yA = maxOf(boxA[1], boxB[1])
+        val xB = minOf(boxA[2], boxB[2])
+        val yB = minOf(boxA[3], boxB[3])
+
+        val interArea = maxOf(0f, xB - xA) * maxOf(0f, yB - yA)
+        val boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+        val boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+
+        val iou = interArea / (boxAArea + boxBArea - interArea)
+        return iou
     }
 
 
