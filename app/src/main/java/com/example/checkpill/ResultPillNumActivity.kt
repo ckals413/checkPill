@@ -5,6 +5,7 @@ import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.checkpill.databinding.ActivityResultPillNumBinding
 import org.tensorflow.lite.Interpreter
@@ -12,6 +13,9 @@ import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class ResultPillNumActivity : AppCompatActivity() {
     lateinit var binding: ActivityResultPillNumBinding
@@ -22,7 +26,7 @@ class ResultPillNumActivity : AppCompatActivity() {
         binding = ActivityResultPillNumBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Load the YOLO model (TFLite)
+        // YOLO 모델 로딩
         loadModel()
 
         // 이미지 URI를 받아서 이미지 표시
@@ -56,7 +60,9 @@ class ResultPillNumActivity : AppCompatActivity() {
             val inputStream = FileInputStream(modelFile.fileDescriptor)
             val modelBuffer = inputStream.channel.map(FileChannel.MapMode.READ_ONLY, modelFile.startOffset, modelFile.declaredLength)
             tflite = Interpreter(modelBuffer)
+            Log.d("ResultPillNumActivity", "모델 로딩 완료")
         } catch (e: Exception) {
+            Log.e("ResultPillNumActivity", "모델 로딩 실패: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -71,11 +77,16 @@ class ResultPillNumActivity : AppCompatActivity() {
         // YOLO 모델 추론
         val output = Array(1) { Array(25200) { FloatArray(16) } }
 
-        // 추론을 실행
-        tflite.run(inputBuffer, output)
+        // 추론 실행
+        try {
+            tflite.run(inputBuffer, output)
+            Log.d("ResultPillNumActivity", "추론 성공")
+        } catch (e: Exception) {
+            Log.e("ResultPillNumActivity", "추론 실패: ${e.message}")
+        }
 
-        // 알약 개수 계산 (confidence 값이 일정 수준 이상인 박스만 선택)
-        val pillCount = processOutput(output)
+        // NMS를 적용하여 알약 개수를 계산
+        val pillCount = processOutputWithNMS(output)
 
         return pillCount
     }
@@ -98,18 +109,80 @@ class ResultPillNumActivity : AppCompatActivity() {
         return byteBuffer
     }
 
-    // 추론 결과 처리 및 알약 개수 계산
-    private fun processOutput(output: Array<Array<FloatArray>>): Int {
-        var pillCount = 0
+    // NMS 적용하여 추론 결과 처리 및 알약 개수 계산
+    private fun processOutputWithNMS(output: Array<Array<FloatArray>>): Int {
         val confidenceThreshold = 0.6f  // Confidence threshold for counting detections
+        val iouThreshold = 0.5f         // IoU threshold for NMS
 
-        for (detection in output[0]) {
+        val boxes = mutableListOf<RectF>()
+        val scores = mutableListOf<Float>()
+
+        for (i in output[0].indices) {
+            val detection = output[0][i]
             val confidence = detection[4]
             if (confidence > confidenceThreshold) {
-                // 알약으로 인식된 개수 증가
-                pillCount++
+                // 검출된 바운딩 박스와 confidence 값을 저장
+                val box = RectF(detection[0], detection[1], detection[2], detection[3])
+                boxes.add(box)
+                scores.add(confidence)
+
+                Log.d("ResultPillNumActivity2", "Detection $i: Confidence = $confidence, Box = $box")
             }
         }
-        return pillCount
+
+        // 좌표 차이와 IoU를 함께 고려한 병합
+        val finalBoxes = mergeSimilarBoxesWithIoU(boxes, scores, iouThreshold)
+
+        // 최종 알약 개수
+        Log.d("ResultPillNumActivity3", "Final pill count after NMS = ${finalBoxes.size}")
+        return finalBoxes.size
+    }
+
+    // 박스 좌표 간 차이가 ±2 이하인지 확인하는 함수
+    private fun isSimilarBox(boxA: RectF, boxB: RectF): Boolean {
+        return (abs(boxA.left - boxB.left) < 0.4f &&
+                abs(boxA.top - boxB.top) < 0.4f &&
+                abs(boxA.right - boxB.right) < 0.4f &&
+                abs(boxA.bottom - boxB.bottom) < 0.4f)
+    }
+
+    // IoU 계산 함수
+    private fun iou(boxA: RectF, boxB: RectF): Float {
+        val intersectionLeft = max(boxA.left, boxB.left)
+        val intersectionTop = max(boxA.top, boxB.top)
+        val intersectionRight = min(boxA.right, boxB.right)
+        val intersectionBottom = min(boxA.bottom, boxB.bottom)
+
+        val intersectionArea = max(0f, intersectionRight - intersectionLeft) * max(0f, intersectionBottom - intersectionTop)
+
+        val boxAArea = (boxA.right - boxA.left) * (boxA.bottom - boxA.top)
+        val boxBArea = (boxB.right - boxB.left) * (boxB.bottom - boxB.top)
+
+        return intersectionArea / (boxAArea + boxBArea - intersectionArea)
+    }
+
+    // 좌표 차이 및 IoU를 모두 고려한 병합 함수
+    private fun mergeSimilarBoxesWithIoU(boxes: List<RectF>, scores: List<Float>, iouThreshold: Float): List<RectF> {
+        val mergedBoxes = mutableListOf<RectF>()
+
+        for (box in boxes) {
+            var isMerged = false
+            for (mergedBox in mergedBoxes) {
+                if (isSimilarBox(mergedBox, box) || iou(mergedBox, box) > iouThreshold) {
+                    // 유사한 박스는 병합
+                    mergedBox.left = (mergedBox.left + box.left) / 2
+                    mergedBox.top = (mergedBox.top + box.top) / 2
+                    mergedBox.right = (mergedBox.right + box.right) / 2
+                    mergedBox.bottom = (mergedBox.bottom + box.bottom) / 2
+                    isMerged = true
+                    break
+                }
+            }
+            if (!isMerged) {
+                mergedBoxes.add(RectF(box))
+            }
+        }
+
+        return mergedBoxes
     }
 }
