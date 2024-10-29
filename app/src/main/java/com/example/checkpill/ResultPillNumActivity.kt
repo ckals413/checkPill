@@ -75,7 +75,7 @@ class ResultPillNumActivity : AppCompatActivity() {
         val inputBuffer = convertBitmapToByteBuffer(resizedBitmap)
 
         // YOLO 모델 추론
-        val output = Array(1) { Array(25200) { FloatArray(16) } }
+        val output = Array(1) { Array(25200) { FloatArray(14) } }
 
         // 추론 실행
         try {
@@ -85,10 +85,8 @@ class ResultPillNumActivity : AppCompatActivity() {
             Log.e("ResultPillNumActivity", "추론 실패: ${e.message}")
         }
 
-        // NMS를 적용하여 알약 개수를 계산
-        val pillCount = processOutputWithNMS(output)
-
-        return pillCount
+        // 새로운 중앙점 기반 알약 개수 계산 함수 호출
+        return processOutputWithCenters(output)
     }
 
     // 비트맵을 ByteBuffer로 변환하는 함수
@@ -109,80 +107,49 @@ class ResultPillNumActivity : AppCompatActivity() {
         return byteBuffer
     }
 
-    // NMS 적용하여 추론 결과 처리 및 알약 개수 계산
-    private fun processOutputWithNMS(output: Array<Array<FloatArray>>): Int {
-        val confidenceThreshold = 0.6f  // Confidence threshold for counting detections
-        val iouThreshold = 0.5f         // IoU threshold for NMS
+    // 중앙점을 기반으로 알약 개수를 계산하는 함수
+    private fun processOutputWithCenters(output: Array<Array<FloatArray>>): Int {
+        val confidenceThreshold = 0.6f  // 신뢰도 임계값
+        val minDistance = 0.05f         // 최소 거리 임계값
+        val centers = mutableListOf<Pair<Float, Float>>()
 
-        val boxes = mutableListOf<RectF>()
-        val scores = mutableListOf<Float>()
-
-        for (i in output[0].indices) {
-            val detection = output[0][i]
+        // 각 탐지 결과에서 중앙점 계산
+        for (detection in output[0]) {
             val confidence = detection[4]
             if (confidence > confidenceThreshold) {
-                // 검출된 바운딩 박스와 confidence 값을 저장
-                val box = RectF(detection[0], detection[1], detection[2], detection[3])
-                boxes.add(box)
-                scores.add(confidence)
+                val centerX = (detection[0] + detection[2]) / 2
+                val centerY = (detection[1] + detection[3]) / 2
+                centers.add(Pair(centerX, centerY))
 
-                Log.d("ResultPillNumActivity2", "Detection $i: Confidence = $confidence, Box = $box")
+                Log.d("ResultPillNumActivity", "Detection center: ($centerX, $centerY)")
             }
         }
 
-        // 좌표 차이와 IoU를 함께 고려한 병합
-        val finalBoxes = mergeSimilarBoxesWithIoU(boxes, scores, iouThreshold)
+        // 중복된 중앙점 제거
+        val uniqueCenters = removeDuplicateCenters(centers, minDistance)
 
         // 최종 알약 개수
-        Log.d("ResultPillNumActivity3", "Final pill count after NMS = ${finalBoxes.size}")
-        return finalBoxes.size
+        Log.d("ResultPillNumActivity", "Final pill count after duplicate center removal = ${uniqueCenters.size}")
+        return uniqueCenters.size
     }
 
-    // 박스 좌표 간 차이가 ±2 이하인지 확인하는 함수
-    private fun isSimilarBox(boxA: RectF, boxB: RectF): Boolean {
-        return (abs(boxA.left - boxB.left) < 0.4f &&
-                abs(boxA.top - boxB.top) < 0.4f &&
-                abs(boxA.right - boxB.right) < 0.4f &&
-                abs(boxA.bottom - boxB.bottom) < 0.4f)
-    }
+    // 중복된 중앙점을 제거하는 함수
+    private fun removeDuplicateCenters(centers: MutableList<Pair<Float, Float>>, minDistance: Float): List<Pair<Float, Float>> {
+        val uniqueCenters = mutableListOf<Pair<Float, Float>>()
 
-    // IoU 계산 함수
-    private fun iou(boxA: RectF, boxB: RectF): Float {
-        val intersectionLeft = max(boxA.left, boxB.left)
-        val intersectionTop = max(boxA.top, boxB.top)
-        val intersectionRight = min(boxA.right, boxB.right)
-        val intersectionBottom = min(boxA.bottom, boxB.bottom)
-
-        val intersectionArea = max(0f, intersectionRight - intersectionLeft) * max(0f, intersectionBottom - intersectionTop)
-
-        val boxAArea = (boxA.right - boxA.left) * (boxA.bottom - boxA.top)
-        val boxBArea = (boxB.right - boxB.left) * (boxB.bottom - boxB.top)
-
-        return intersectionArea / (boxAArea + boxBArea - intersectionArea)
-    }
-
-    // 좌표 차이 및 IoU를 모두 고려한 병합 함수
-    private fun mergeSimilarBoxesWithIoU(boxes: List<RectF>, scores: List<Float>, iouThreshold: Float): List<RectF> {
-        val mergedBoxes = mutableListOf<RectF>()
-
-        for (box in boxes) {
-            var isMerged = false
-            for (mergedBox in mergedBoxes) {
-                if (isSimilarBox(mergedBox, box) || iou(mergedBox, box) > iouThreshold) {
-                    // 유사한 박스는 병합
-                    mergedBox.left = (mergedBox.left + box.left) / 2
-                    mergedBox.top = (mergedBox.top + box.top) / 2
-                    mergedBox.right = (mergedBox.right + box.right) / 2
-                    mergedBox.bottom = (mergedBox.bottom + box.bottom) / 2
-                    isMerged = true
+        for (center in centers) {
+            var isUnique = true
+            for (uniqueCenter in uniqueCenters) {
+                val distance = Math.sqrt(Math.pow((center.first - uniqueCenter.first).toDouble(), 2.0) + Math.pow((center.second - uniqueCenter.second).toDouble(), 2.0))
+                if (distance < minDistance) {
+                    isUnique = false
                     break
                 }
             }
-            if (!isMerged) {
-                mergedBoxes.add(RectF(box))
+            if (isUnique) {
+                uniqueCenters.add(center)
             }
         }
-
-        return mergedBoxes
+        return uniqueCenters
     }
 }
