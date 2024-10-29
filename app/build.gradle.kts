@@ -19,6 +19,8 @@ android {
         ndk {
             abiFilters.add("armeabi-v7a")
             abiFilters.add("arm64-v8a")
+            abiFilters.add("x86_64") // x86_64 아키텍처 추가
+
         }
 
     }
@@ -65,6 +67,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    //re
 
     // CameraX
     val camerax_version = "1.4.0-beta02"

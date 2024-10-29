@@ -98,36 +98,39 @@ class ResultPillSearchActivity : AppCompatActivity() {
 
     private fun runInference(bitmap: Bitmap) {
         val input = convertBitmapToByteBuffer(bitmap)
-        val output = Array(1) { Array(25200) { FloatArray(16) } }
+        val output = Array(1) { Array(25200) { FloatArray(14) } }
 
         try {
+            Log.d("ResultPillSearchActivity", "모델에 입력 전달 중...")
             tflite.run(input, output)
+            Log.d("ResultPillSearchActivity", "모델 추론 완료")
+
             // 모델 출력을 확인하는 로그
-            for (detection in output[0]) {
-                Log.d("ModelOutput", "Detection: ${detection.contentToString()}")
+            for ((index, detection) in output[0].withIndex()) {
+                Log.d("ModelOutput", "Detection $index: ${detection.contentToString()}")
             }
+
             processResult(output)
-            Log.d("ResultPillSearchActivity!", "모델 추론 성공")
+            Log.d("ResultPillSearchActivity", "모델 추론 및 결과 처리 완료")
         } catch (e: Exception) {
             e.printStackTrace()
-            Log.e("ResultPillSearchActivity!", "모델 추론 중 오류 발생: ${e.message}")
+            Log.e("ResultPillSearchActivity", "모델 추론 중 오류 발생: ${e.message}")
         }
     }
 
 
+
     // 클래스 인덱스를 알약 이름과 매핑하는 Map 생성
     val pillClasses = mapOf(
-        0 to "A",
-        1 to "B",
-        2 to "C",
-        3 to "D",
-        4 to "E",
-        5 to "F",
-        6 to "G",
-        7 to "H",
-        8 to "I",
-        9 to "J",
-        10 to "K"
+        0 to "B-max",
+        1 to "Dusca",
+        2 to "Ecathin",
+        3 to "Joktin",
+        4 to "KJ",
+        5 to "Raniramin",
+        6 to "ag",
+        7 to "cefaclin",
+        8 to "esotinon"
     )
 
 
