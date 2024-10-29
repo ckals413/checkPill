@@ -157,12 +157,14 @@ class ResultPillSearchActivity : AppCompatActivity() {
             val classIndex = classProbabilities.indices.maxByOrNull { classProbabilities[it] } ?: 0
             val pillName = pillClasses[classIndex] ?: "Unknown"
             val confidence = detection[4]
+            val formattedConfidence = String.format("%.2f", confidence) // 소수점 두 자리로 포맷
+
 
             Log.d("ClassIndex", "Detected class index: $classIndex, name: $pillName")
 
             // 탐지된 결과를 화면에 표시
             runOnUiThread {
-                binding.detectResultTV.text = "탐지된 알약: $pillName \n 신뢰도 $confidence 로 탐지되었습니다."
+                binding.detectResultTV.text = "탐지된 알약: $pillName \n\n신뢰도 $formattedConfidence 로 탐지되었습니다."
             }
         } ?: run {
             // 탐지된 결과가 없을 경우
