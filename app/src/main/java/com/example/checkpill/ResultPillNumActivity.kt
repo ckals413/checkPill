@@ -1,7 +1,6 @@
 package com.example.checkpill
 
-import android.graphics.Bitmap
-import android.graphics.RectF
+import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -32,13 +31,11 @@ class ResultPillNumActivity : AppCompatActivity() {
         // 이미지 URI를 받아서 이미지 표시
         val imageUri = intent.getStringExtra("imageUri")
         imageUri?.let {
-            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, Uri.parse(it))
+            val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, Uri.parse(it)).copy(Bitmap.Config.ARGB_8888, true)
             binding.medicineIv.setImageBitmap(bitmap)
 
-            // YOLO 모델을 사용하여 알약 개수 계산
+            // YOLO 모델을 사용하여 알약 개수 계산 및 시각화
             val pillCount = detectPills(bitmap)
-
-            // 인식된 알약 개수를 표시
             binding.detectResultNumTV.text = "인식된 알약의 개수: $pillCount"
         }
 
@@ -85,8 +82,9 @@ class ResultPillNumActivity : AppCompatActivity() {
             Log.e("ResultPillNumActivity", "추론 실패: ${e.message}")
         }
 
-        // 새로운 중앙점 기반 알약 개수 계산 함수 호출
-        return processOutputWithCenters(output)
+        // 새로운 중앙점 기반 알약 개수 계산 함수 호출 및 시각화
+        val pillCount = processOutputWithCenters(output, bitmap)
+        return pillCount
     }
 
     // 비트맵을 ByteBuffer로 변환하는 함수
@@ -107,8 +105,9 @@ class ResultPillNumActivity : AppCompatActivity() {
         return byteBuffer
     }
 
+
     // 중앙점을 기반으로 알약 개수를 계산하는 함수
-    private fun processOutputWithCenters(output: Array<Array<FloatArray>>): Int {
+    private fun processOutputWithCenters(output: Array<Array<FloatArray>>, bitmap: Bitmap): Int {
         val confidenceThreshold = 0.6f  // 신뢰도 임계값
         val minDistance = 0.05f         // 최소 거리 임계값
         val centers = mutableListOf<Pair<Float, Float>>()
@@ -117,8 +116,8 @@ class ResultPillNumActivity : AppCompatActivity() {
         for (detection in output[0]) {
             val confidence = detection[4]
             if (confidence > confidenceThreshold) {
-                val centerX = (detection[0] + detection[2]) / 2
-                val centerY = (detection[1] + detection[3]) / 2
+                val centerX = detection[0]  // 이미 0~1 사이로 정규화된 값
+                val centerY = detection[1]
                 centers.add(Pair(centerX, centerY))
 
                 Log.d("ResultPillNumActivity", "Detection center: ($centerX, $centerY)")
@@ -128,10 +127,36 @@ class ResultPillNumActivity : AppCompatActivity() {
         // 중복된 중앙점 제거
         val uniqueCenters = removeDuplicateCenters(centers, minDistance)
 
+        // 비트맵에 중앙점 시각화
+        drawCentersOnBitmap(bitmap, uniqueCenters)
+
         // 최종 알약 개수
         Log.d("ResultPillNumActivity", "Final pill count after duplicate center removal = ${uniqueCenters.size}")
         return uniqueCenters.size
     }
+
+    // 비트맵에 중앙점을 그리는 함수
+    private fun drawCentersOnBitmap(bitmap: Bitmap, centers: List<Pair<Float, Float>>) {
+        val canvas = Canvas(bitmap)
+        val paint = Paint().apply {
+            color = Color.RED
+            style = Paint.Style.FILL
+            strokeWidth = 10f
+        }
+
+        for (center in centers) {
+            // 좌표를 비트맵 크기에 맞게 조정
+            val x = center.first * bitmap.width
+            val y = center.second * bitmap.height
+            canvas.drawCircle(x, y, 10f, paint) // 반지름 10f의 원으로 중앙점 표시
+        }
+
+        // 변경된 비트맵을 UI에 업데이트
+        runOnUiThread {
+            binding.medicineIv.setImageBitmap(bitmap)
+        }
+    }
+
 
     // 중복된 중앙점을 제거하는 함수
     private fun removeDuplicateCenters(centers: MutableList<Pair<Float, Float>>, minDistance: Float): List<Pair<Float, Float>> {
