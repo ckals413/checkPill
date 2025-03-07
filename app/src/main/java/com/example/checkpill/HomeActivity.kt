@@ -36,18 +36,36 @@ class HomeActivity : AppCompatActivity() {
         // 초기 프래그먼트 설정
         replaceFragment(HomeFragment())
 
-        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
-        bottomNavigationView.setOnItemSelectedListener { item ->
+        // 바텀 네비게이션 설정
+        setupBottomNavigation()
+
+        // FAB 이벤트 설정
+        setupSearchFab()
+
+        // 권한 체크
+        checkPermissions()
+    }
+
+    private fun setupBottomNavigation() {
+        // 바텀 네비게이션 배경 제거
+        binding.bottomNavigationView.background = null
+
+        // 가운데 아이템 비활성화
+        binding.bottomNavigationView.menu.getItem(1).isEnabled = false
+
+        binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.fragment_home -> replaceFragment(HomeFragment())
-                R.id.fragment_search -> replaceFragment(SearchFragment())
                 R.id.fragment_settings -> replaceFragment(SettingsFragment())
             }
             true
         }
+    }
 
-        // 권한 체크
-        checkPermissions()
+    private fun setupSearchFab() {
+        binding.searchFab.setOnClickListener {
+            startPillSearch()
+        }
     }
 
     // 프래그먼트 교체 함수
@@ -57,7 +75,7 @@ class HomeActivity : AppCompatActivity() {
             .commit()
     }
 
-    // 약 검색 기능 시작 (HomeFragment에서 호출)
+    // 약 검색 기능 시작 (FAB에서 호출)
     fun startPillSearch() {
         clickedButton = "pillSearch"
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -15,124 +14,41 @@
         android:layout_height="match_parent"
         android:layout_marginBottom="56dp" />
 
-<!--    &lt;!&ndash; 메인 홈 화면 콘텐츠 - HomeFragment에 속함 &ndash;&gt;-->
-<!--    <ScrollView-->
-<!--        android:id="@+id/main_content"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:layout_marginBottom="56dp"-->
-<!--        android:visibility="gone">-->
-
-<!--        <androidx.constraintlayout.widget.ConstraintLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content">-->
-<!--            <ImageView-->
-<!--                android:id="@+id/home_logo_IV"-->
-<!--                android:layout_width="250dp"-->
-<!--                android:layout_height="100dp"-->
-<!--                android:layout_marginTop="40dp"-->
-<!--                android:src="@drawable/ic_checkpill_logo"-->
-<!--                app:layout_constraintEnd_toEndOf="parent"-->
-<!--                app:layout_constraintHorizontal_bias="0.496"-->
-<!--                app:layout_constraintStart_toStartOf="parent"-->
-<!--                app:layout_constraintTop_toTopOf="parent" />-->
-
-<!--            <LinearLayout-->
-<!--                android:id="@+id/home_bottom_box_CL"-->
-<!--                app:layout_constraintTop_toBottomOf="@+id/home_logo_IV"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="190dp"-->
-<!--                android:orientation="horizontal"-->
-<!--                android:gravity="center"-->
-<!--                android:layout_marginTop="200dp">-->
-
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/home_search_CV"-->
-<!--                    android:layout_width="165dp"-->
-<!--                    android:layout_height="155dp"-->
-<!--                    android:layout_marginEnd="12dp"-->
-<!--                    app:cardBackgroundColor="@color/boxColor"-->
-<!--                    app:cardCornerRadius="15dp"-->
-<!--                    app:cardElevation="6dp"-->
-<!--                    android:clipChildren="false">-->
-
-<!--                    <TextView-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="19dp"-->
-<!--                        android:layout_marginTop="18dp"-->
-<!--                        android:text="알약 검색"-->
-<!--                        android:textColor="@color/boxTextColor2"-->
-<!--                        android:textSize="19sp"-->
-<!--                        android:textStyle="bold" />-->
-
-<!--                    <TextView-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="19sp"-->
-<!--                        android:layout_marginTop="50dp"-->
-<!--                        android:text="알약을 간편하게 검색해보세요!"-->
-<!--                        android:textColor="@color/boxTextColor1"-->
-<!--                        android:textSize="10sp" />-->
-
-<!--                    <ImageView-->
-<!--                        android:layout_width="55dp"-->
-<!--                        android:layout_height="55dp"-->
-<!--                        android:layout_marginStart="100dp"-->
-<!--                        android:layout_marginTop="90dp"-->
-<!--                        android:src="@drawable/ic_search" />-->
-<!--                </androidx.cardview.widget.CardView>-->
-
-<!--                <androidx.cardview.widget.CardView-->
-<!--                    android:id="@+id/home_pillNum_CV"-->
-<!--                    android:layout_width="165dp"-->
-<!--                    android:layout_height="155dp"-->
-<!--                    android:layout_marginStart="12dp"-->
-<!--                    app:cardBackgroundColor="@color/boxColor"-->
-<!--                    app:cardCornerRadius="15dp"-->
-<!--                    app:cardElevation="6dp"-->
-<!--                    android:clipChildren="false">-->
-
-<!--                    <TextView-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="19dp"-->
-<!--                        android:layout_marginTop="18dp"-->
-<!--                        android:text="알약 개수"-->
-<!--                        android:textColor="@color/boxTextColor2"-->
-<!--                        android:textSize="19sp"-->
-<!--                        android:textStyle="bold" />-->
-
-<!--                    <TextView-->
-<!--                        android:layout_width="110dp"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginStart="19sp"-->
-<!--                        android:layout_marginTop="48dp"-->
-<!--                        android:text="알약의 개수를 쉽고 빠르게 개수를 세보세요 !"-->
-<!--                        android:textColor="@color/boxTextColor1"-->
-<!--                        android:textSize="10sp" />-->
-
-<!--                    <ImageView-->
-<!--                        android:layout_width="55dp"-->
-<!--                        android:layout_height="55dp"-->
-<!--                        android:layout_marginStart="100dp"-->
-<!--                        android:layout_marginTop="90dp"-->
-<!--                        android:src="@drawable/ic_num" />-->
-<!--                </androidx.cardview.widget.CardView>-->
-<!--            </LinearLayout>-->
-<!--        </androidx.constraintlayout.widget.ConstraintLayout>-->
-<!--    </ScrollView>-->
-
-    <!-- 바텀 네비게이션 바 -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigationView"
+    <!-- 바텀 앱바 -->
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:menu="@menu/menu_bottom_nav"
-        app:itemIconTint="@color/nav_item_color"
-        app:itemTextColor="@color/nav_text_color"
-        android:background="?android:attr/windowBackground"/>
+        app:fabCradleMargin="15dp"
+        app:fabCradleRoundedCornerRadius="10dp"
+        app:fabCradleVerticalOffset="0dp"
+        app:fabAlignmentMode="center"
+        android:backgroundTint="@android:color/white">
+
+        <!-- 바텀 네비게이션 바 -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigationView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            app:itemIconTint="@color/nav_item_color"
+            app:itemTextColor="@color/nav_text_color"
+            app:menu="@menu/menu_bottom_nav" />
+
+    </com.google.android.material.bottomappbar.BottomAppBar>
+
+    <!-- 플로팅 액션 버튼 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/searchFab"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:contentDescription="약 검색"
+        android:src="@drawable/ic_camera"
+        app:backgroundTint="#5B9BFF"
+        app:tint="@android:color/white"
+        app:maxImageSize="28dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+        app:layout_anchor="@id/bottomAppBar" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
