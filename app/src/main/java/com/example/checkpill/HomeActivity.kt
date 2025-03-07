@@ -64,7 +64,7 @@ class HomeActivity : AppCompatActivity() {
 
     private fun setupSearchFab() {
         binding.searchFab.setOnClickListener {
-            startPillSearch()
+            startPillCount()
         }
     }
 

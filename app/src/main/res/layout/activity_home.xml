@@ -41,14 +41,18 @@
     <!-- 플로팅 액션 버튼 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/searchFab"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:contentDescription="약 검색"
         android:src="@drawable/ic_camera"
+        android:scaleType="center"
         app:backgroundTint="#5B9BFF"
         app:tint="@android:color/white"
-        app:maxImageSize="28dp"
+        app:maxImageSize="50dp"
+        app:fabCustomSize="100dp"
+        app:useCompatPadding="false"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-        app:layout_anchor="@id/bottomAppBar" />
+        app:layout_anchor="@id/bottomAppBar"
+        android:layout_marginBottom="30dp"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
