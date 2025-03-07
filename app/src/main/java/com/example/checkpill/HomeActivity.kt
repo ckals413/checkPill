@@ -11,7 +11,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.example.checkpill.databinding.ActivityHomeBinding
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
 import java.io.FileOutputStream
 
@@ -31,24 +33,47 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // homePillNumCV 클릭 시 ResultPillNumActivity로 이동
-        binding.homePillNumCV.setOnClickListener {
-            clickedButton = "pillNum"
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                dispatchTakePictureIntent()
-            } else {
-                requestCameraPermission()
+        // 초기 프래그먼트 설정
+        replaceFragment(HomeFragment())
+
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.fragment_home -> replaceFragment(HomeFragment())
+                R.id.fragment_search -> replaceFragment(SearchFragment())
+                R.id.fragment_settings -> replaceFragment(SettingsFragment())
             }
+            true
         }
 
-        // homeSearchCV 클릭 시 ResultPillSearchActivity로 이동
-        binding.homeSearchCV.setOnClickListener {
-            clickedButton = "pillSearch"
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                dispatchTakePictureIntent()
-            } else {
-                requestCameraPermission()
-            }
+        // 권한 체크
+        checkPermissions()
+    }
+
+    // 프래그먼트 교체 함수
+    private fun replaceFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
+    }
+
+    // 약 검색 기능 시작 (HomeFragment에서 호출)
+    fun startPillSearch() {
+        clickedButton = "pillSearch"
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            dispatchTakePictureIntent()
+        } else {
+            requestCameraPermission()
+        }
+    }
+
+    // 약 개수 세기 기능 시작 (HomeFragment에서 호출)
+    fun startPillCount() {
+        clickedButton = "pillNum"
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            dispatchTakePictureIntent()
+        } else {
+            requestCameraPermission()
         }
     }
 
@@ -64,7 +89,6 @@ class HomeActivity : AppCompatActivity() {
         requestPermissions(permissions, REQUEST_PERMISSIONS)
     }
 
-    // 하나의 메서드로 카메라 인텐트 처리
     private fun dispatchTakePictureIntent() {
         val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         if (takePictureIntent.resolveActivity(packageManager) != null) {
@@ -74,7 +98,6 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    // 비트맵을 파일로 저장하는 함수
     private fun saveBitmapToFile(bitmap: Bitmap): Uri? {
         return try {
             val file = File(cacheDir, "captured_image.png")
