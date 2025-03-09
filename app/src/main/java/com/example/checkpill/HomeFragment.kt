@@ -26,7 +26,10 @@ class HomeFragment : Fragment() {
         // 액티비티에서 CardView 클릭 이벤트 핸들러 로직을 가져옴
         // 약 검색 카드 클릭 이벤트
         binding.homeSearchCV.setOnClickListener {
-            (activity as? HomeActivity)?.startPillSearch()
+            context?.let {
+                val intent = Intent(it, PillSearchActivity::class.java)
+                startActivity(intent)
+            }
         }
 
         // 약 개수 카드 클릭 이벤트

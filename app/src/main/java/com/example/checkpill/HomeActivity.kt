@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.checkpill.databinding.ActivityHomeBinding
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
 import java.io.FileOutputStream
 
@@ -75,7 +74,7 @@ class HomeActivity : AppCompatActivity() {
             .commit()
     }
 
-    // 약 검색 기능 시작 (FAB에서 호출)
+    // 약 검색 기능 시작
     fun startPillSearch() {
         clickedButton = "pillSearch"
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -85,7 +84,7 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    // 약 개수 세기 기능 시작 (HomeFragment에서 호출)
+    // 약 개수 세기 기능 시작
     fun startPillCount() {
         clickedButton = "pillNum"
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -158,7 +157,7 @@ class HomeActivity : AppCompatActivity() {
                                 startActivity(intent)
                             }
                             "pillSearch" -> {
-                                val intent = Intent(this, ResultPillSearchActivity::class.java)
+                                val intent = Intent(this, ResultPillSearchCameraActivity::class.java)
                                 intent.putExtra("imageUri", fileUri.toString())
                                 startActivity(intent)
                             }

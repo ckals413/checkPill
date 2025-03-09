@@ -1,7 +1,6 @@
 package com.example.checkpill
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -14,14 +13,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.checkpill.databinding.ActivityResultPillSearchBinding
 import org.tensorflow.lite.Interpreter
-import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
-class ResultPillSearchActivity : AppCompatActivity() {
+class ResultPillSearchCameraActivity : AppCompatActivity() {
     lateinit var binding: ActivityResultPillSearchBinding
     private lateinit var tflite: Interpreter
 
