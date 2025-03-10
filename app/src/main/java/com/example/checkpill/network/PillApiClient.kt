@@ -22,7 +22,7 @@ interface PillApiService {
         @Query("serviceKey", encoded = true) serviceKey: String,
         @Query("itemName") itemName: String,
         @Query("pageNo") pageNo: Int = 1,
-        @Query("numOfRows") numOfRows: Int = 10,
+        @Query("numOfRows") numOfRows: Int = 30,
         @Query("type") type: String = "json"
     ): Response<PillResponse>
 }
