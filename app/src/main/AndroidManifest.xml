@@ -45,6 +45,10 @@
         <activity android:name=".PillSearchActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".PillDetailActivity"
+            android:exported="false" />
+
 
         <activity
             android:name=".HomeActivity"

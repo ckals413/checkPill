@@ -1,5 +1,7 @@
 package com.example.checkpill.model
 
+import android.os.Parcel
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
 
 // API 응답 루트 객체
@@ -75,5 +77,59 @@ data class PillInfo(
     val updateDate: String? = null, // 수정일자
 
     @SerializedName("etcOtcName")
-    val etcOtcName: String? = null // 전문/일반 구분
-)
+    val etcOtcName: String? = null, // 전문/일반 구분
+
+    @SerializedName("bizrno")
+    val bizrno: String? = null // 제조사 사업자등록번호
+) : Parcelable {
+
+    constructor(parcel: Parcel) : this(
+        itemSeq = parcel.readString() ?: "",
+        itemName = parcel.readString() ?: "",
+        entpName = parcel.readString() ?: "",
+        itemImage = parcel.readString(),
+        efficacy = parcel.readString(),
+        useMethod = parcel.readString(),
+        atpnWarn = parcel.readString(),
+        atpn = parcel.readString(),
+        interaction = parcel.readString(),
+        sideEffect = parcel.readString(),
+        depositMethod = parcel.readString(),
+        openDate = parcel.readString(),
+        updateDate = parcel.readString(),
+        etcOtcName = parcel.readString(),
+        bizrno = parcel.readString()
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(itemSeq)
+        parcel.writeString(itemName)
+        parcel.writeString(entpName)
+        parcel.writeString(itemImage)
+        parcel.writeString(efficacy)
+        parcel.writeString(useMethod)
+        parcel.writeString(atpnWarn)
+        parcel.writeString(atpn)
+        parcel.writeString(interaction)
+        parcel.writeString(sideEffect)
+        parcel.writeString(depositMethod)
+        parcel.writeString(openDate)
+        parcel.writeString(updateDate)
+        parcel.writeString(etcOtcName)
+        parcel.writeString(bizrno)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<PillInfo> {
+        override fun createFromParcel(parcel: Parcel): PillInfo {
+            return PillInfo(parcel)
+        }
+
+        override fun newArray(size: Int): Array<PillInfo?> {
+            return arrayOfNulls(size)
+        }
+    }
+}

@@ -1,5 +1,6 @@
 package com.example.checkpill
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -112,8 +113,9 @@ class PillSearchActivity : AppCompatActivity() {
     }
 
     private fun navigateToPillDetail(pillInfo: PillInfo) {
-        // 현재는 토스트 메시지만 표시 (향후 상세 화면으로 이동 구현)
-        Toast.makeText(this, "${pillInfo.itemName} 선택됨", Toast.LENGTH_SHORT).show()
+        val intent = Intent(this, PillDetailActivity::class.java)
+        intent.putExtra("pillInfo", pillInfo)
+        startActivity(intent)
     }
 
     private fun showErrorMessage(message: String) {
