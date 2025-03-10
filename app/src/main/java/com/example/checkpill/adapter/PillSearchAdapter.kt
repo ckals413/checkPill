@@ -11,9 +11,9 @@ import com.example.checkpill.R
 import com.example.checkpill.databinding.ItemPillBinding
 import com.example.checkpill.model.PillInfo
 
-/**
- * 알약 검색 결과 리사이클러뷰 어댑터
- */
+
+ // 알약 검색 결과 리사이클러뷰 어댑터
+
 class PillSearchAdapter(
     private val onItemClick: (PillInfo) -> Unit
 ) : ListAdapter<PillInfo, PillSearchAdapter.PillViewHolder>(PillDiffCallback()) {
@@ -80,9 +80,8 @@ class PillSearchAdapter(
     }
 }
 
-/**
- * 알약 아이템 비교를 위한 DiffUtil 콜백
- */
+ // 알약 아이템 비교를 위한 DiffUtil 콜백
+
 class PillDiffCallback : DiffUtil.ItemCallback<PillInfo>() {
     override fun areItemsTheSame(oldItem: PillInfo, newItem: PillInfo): Boolean {
         return oldItem.itemSeq == newItem.itemSeq
