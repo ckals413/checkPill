@@ -43,6 +43,7 @@ class ResultPillNumActivity : AppCompatActivity() {
             // YOLO 모델을 사용하여 알약 개수 계산 및 시각화
             detectedPillCount = detectPills(bitmap)
             binding.detectResultNumTV.text = "인식된 알약의 개수: $detectedPillCount"
+            binding.pillCountEditText.setText(detectedPillCount.toString())
         }
 
         binding.saveInventoryButton.setOnClickListener {
@@ -66,7 +67,8 @@ class ResultPillNumActivity : AppCompatActivity() {
             return
         }
 
-        if (detectedPillCount <= 0) {
+        val pillCount = binding.pillCountEditText.text.toString().toIntOrNull() ?: 0
+        if (pillCount <= 0) {
             Toast.makeText(this, "저장할 알약 개수가 없습니다.", Toast.LENGTH_SHORT).show()
             return
         }
@@ -75,7 +77,7 @@ class ResultPillNumActivity : AppCompatActivity() {
         val dateFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA)
         val record = PillInventoryRecord(
             pillName = pillName,
-            pillCount = detectedPillCount,
+            pillCount = pillCount,
             savedAtMillis = now.time,
             savedAtText = dateFormat.format(now)
         )
