@@ -14,15 +14,28 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <ImageView
+            android:id="@+id/pill_photo_image_view"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:background="@drawable/search_background"
+            android:contentDescription="저장된 알약 사진"
+            android:padding="4dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_pill_placeholder"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/pill_name_text_view"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
             android:textColor="@color/boxTextColor2"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@+id/pill_count_text_view"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/pill_photo_image_view"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -46,6 +59,17 @@
             app:layout_constraintStart_toStartOf="@+id/pill_name_text_view"
             app:layout_constraintTop_toBottomOf="@+id/pill_name_text_view" />
 
+        <TextView
+            android:id="@+id/extra_info_text_view"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#666666"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/pill_name_text_view"
+            app:layout_constraintTop_toBottomOf="@+id/saved_at_text_view" />
+
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/edit_button"
             android:layout_width="72dp"
@@ -57,7 +81,7 @@
             android:textSize="13sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/saved_at_text_view" />
+            app:layout_constraintTop_toBottomOf="@+id/extra_info_text_view" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/delete_button"

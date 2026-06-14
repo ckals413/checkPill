@@ -2,6 +2,7 @@ package com.example.checkpill.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.net.Uri
 import androidx.recyclerview.widget.RecyclerView
 import com.example.checkpill.databinding.ItemPillInventoryBinding
 import com.example.checkpill.model.PillInventoryRecord
@@ -37,8 +38,16 @@ class PillInventoryAdapter(
             onDeleteClicked: (PillInventoryRecord) -> Unit
         ) {
             binding.pillNameTextView.text = record.pillName
-            binding.pillCountTextView.text = "${record.pillCount}정"
+            binding.pillCountTextView.text = "${record.transactionLabel()} ${record.pillCount}정"
             binding.savedAtTextView.text = record.savedAtText
+            binding.extraInfoTextView.text = record.expirationDateText?.let {
+                "유통기한 $it"
+            } ?: "유통기한 미입력"
+            record.photoUri?.let {
+                binding.pillPhotoImageView.setImageURI(Uri.parse(it))
+            } ?: run {
+                binding.pillPhotoImageView.setImageResource(com.example.checkpill.R.drawable.ic_pill_placeholder)
+            }
             binding.editButton.setOnClickListener {
                 onEditClicked(record)
             }

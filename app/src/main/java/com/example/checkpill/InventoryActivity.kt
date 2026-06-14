@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +14,8 @@ import com.example.checkpill.adapter.PillInventoryAdapter
 import com.example.checkpill.data.PillInventoryStore
 import com.example.checkpill.databinding.ActivityInventoryBinding
 import com.example.checkpill.model.PillInventoryRecord
+import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_IN
+import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_OUT
 
 class InventoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInventoryBinding
@@ -69,8 +73,29 @@ class InventoryActivity : AppCompatActivity() {
             setText(record.pillCount.toString())
             maxLines = 1
         }
+        val typeGroup = RadioGroup(this).apply {
+            orientation = RadioGroup.HORIZONTAL
+        }
+        val inboundButton = RadioButton(this).apply {
+            text = "입고"
+            id = View.generateViewId()
+        }
+        val outboundButton = RadioButton(this).apply {
+            text = "출고"
+            id = View.generateViewId()
+        }
+        typeGroup.addView(inboundButton)
+        typeGroup.addView(outboundButton)
+        typeGroup.check(if (record.transactionType == TYPE_OUT) outboundButton.id else inboundButton.id)
+        val expirationEditText = EditText(this).apply {
+            hint = "유통기한 예: 2026.12.31"
+            setText(record.expirationDateText.orEmpty())
+            maxLines = 1
+        }
         container.addView(nameEditText)
         container.addView(countEditText)
+        container.addView(typeGroup)
+        container.addView(expirationEditText)
 
         AlertDialog.Builder(this)
             .setTitle("재고 기록 수정")
@@ -84,7 +109,19 @@ class InventoryActivity : AppCompatActivity() {
                     return@setPositiveButton
                 }
 
-                store.updateRecord(record.copy(pillName = name, pillCount = count))
+                val transactionType = if (typeGroup.checkedRadioButtonId == outboundButton.id) {
+                    TYPE_OUT
+                } else {
+                    TYPE_IN
+                }
+                store.updateRecord(
+                    record.copy(
+                        pillName = name,
+                        pillCount = count,
+                        transactionType = transactionType,
+                        expirationDateText = expirationEditText.text.toString().trim().ifBlank { null }
+                    )
+                )
                 Toast.makeText(this, "재고 기록이 수정되었습니다.", Toast.LENGTH_SHORT).show()
                 renderInventory()
             }

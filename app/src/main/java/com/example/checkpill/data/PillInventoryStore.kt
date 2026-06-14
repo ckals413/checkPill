@@ -33,12 +33,12 @@ class PillInventoryStore(context: Context) {
         dao.delete(record)
     }
 
-    fun getTotalCount(): Int = getRecords().sumOf { it.pillCount }
+    fun getTotalCount(): Int = getRecords().sumOf { it.signedCount() }
 
     fun getTotalsByPillName(): List<Pair<String, Int>> {
         return getRecords()
             .groupBy { it.pillName }
-            .map { (name, records) -> name to records.sumOf { it.pillCount } }
+            .map { (name, records) -> name to records.sumOf { it.signedCount() } }
             .sortedBy { it.first }
     }
 

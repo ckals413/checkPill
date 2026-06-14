@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.checkpill.data.PillInventoryStore
 import com.example.checkpill.databinding.ActivityResultPillNumBinding
 import com.example.checkpill.model.PillInventoryRecord
+import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_OUT
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -24,6 +25,7 @@ class ResultPillNumActivity : AppCompatActivity() {
     private lateinit var tflite: Interpreter
     private lateinit var inventoryStore: PillInventoryStore
     private var detectedPillCount: Int = 0
+    private var capturedImageUri: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +38,7 @@ class ResultPillNumActivity : AppCompatActivity() {
 
         // 이미지 URI를 받아서 이미지 표시
         val imageUri = intent.getStringExtra("imageUri")
+        capturedImageUri = imageUri
         imageUri?.let {
             val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, Uri.parse(it)).copy(Bitmap.Config.ARGB_8888, true)
             binding.medicineIv.setImageBitmap(bitmap)
@@ -75,11 +78,20 @@ class ResultPillNumActivity : AppCompatActivity() {
 
         val now = Date()
         val dateFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA)
+        val transactionType = if (binding.outboundRadioButton.isChecked) {
+            TYPE_OUT
+        } else {
+            PillInventoryRecord.TYPE_IN
+        }
+        val expirationDate = binding.expirationDateEditText.text.toString().trim()
         val record = PillInventoryRecord(
             pillName = pillName,
             pillCount = pillCount,
             savedAtMillis = now.time,
-            savedAtText = dateFormat.format(now)
+            savedAtText = dateFormat.format(now),
+            transactionType = transactionType,
+            expirationDateText = expirationDate.ifBlank { null },
+            photoUri = capturedImageUri
         )
 
         inventoryStore.addRecord(record)
