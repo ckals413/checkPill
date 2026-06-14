@@ -44,6 +44,10 @@
             />
 
         <activity
+            android:name=".SyncActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".InventoryActivity"
             android:exported="false" />
 
@@ -58,6 +62,10 @@
 
         <activity
             android:name=".HomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
