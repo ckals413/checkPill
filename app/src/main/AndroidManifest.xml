@@ -41,6 +41,10 @@
             android:exported="true"
             />
 
+        <activity
+            android:name=".InventoryActivity"
+            android:exported="false" />
+
 
         <activity android:name=".PillSearchActivity"
             android:exported="false" />
