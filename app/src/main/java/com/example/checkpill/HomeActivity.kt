@@ -5,10 +5,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -21,11 +22,19 @@ class HomeActivity : AppCompatActivity() {
 
     companion object {
         const val REQUEST_PERMISSIONS = 1001
-        const val REQUEST_IMAGE_CAPTURE = 1002
     }
 
     // 버튼 클릭을 기록하는 변수
     private var clickedButton: String? = null
+    private val takePicturePreviewLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap == null) {
+            Toast.makeText(this, "사진 촬영이 취소되었습니다.", Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+        handleCapturedBitmap(bitmap)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,22 +104,30 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
+        val permissions = buildRequiredPermissions()
         if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
             requestPermissions(permissions, REQUEST_PERMISSIONS)
         }
     }
 
     private fun requestCameraPermission() {
-        val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA)
+        val permissions = buildRequiredPermissions()
         requestPermissions(permissions, REQUEST_PERMISSIONS)
     }
 
+    private fun buildRequiredPermissions(): Array<String> {
+        val permissions = mutableListOf(Manifest.permission.CAMERA)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        return permissions.toTypedArray()
+    }
+
     private fun dispatchTakePictureIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (takePictureIntent.resolveActivity(packageManager) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
-        } else {
+        try {
+            takePicturePreviewLauncher.launch(null)
+        } catch (e: Exception) {
+            Log.e("HomeActivity", "카메라 실행 실패: ${e.message}")
             Toast.makeText(this, "카메라 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
         }
     }
@@ -128,50 +145,30 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK && data != null) {
-            val imageUri: Uri? = data.data
-            var imageBitmap: Bitmap? = null
-
-            try {
-                imageBitmap = if (imageUri == null) {
-                    val extras = data.extras
-                    extras?.get("data") as? Bitmap
-                } else {
-                    MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-                }
-
-                imageBitmap?.let {
-                    Log.d("HomeActivity", "이미지 로드 성공")
-                    imageBitmap = Bitmap.createScaledBitmap(it, 640, 640, false)
-
-                    val fileUri = saveBitmapToFile(imageBitmap!!)
-                    fileUri?.let {
-                        Log.d("HomeActivity", "이미지 파일 저장 성공: $fileUri")
-                        when (clickedButton) {
-                            "pillNum" -> {
-                                val intent = Intent(this, ResultPillNumActivity::class.java)
-                                intent.putExtra("imageUri", fileUri.toString())
-                                startActivity(intent)
-                            }
-                            "pillSearch" -> {
-                                val intent = Intent(this, ResultPillSearchCameraActivity::class.java)
-                                intent.putExtra("imageUri", fileUri.toString())
-                                startActivity(intent)
-                            }
-                        }
+    private fun handleCapturedBitmap(bitmap: Bitmap) {
+        try {
+            Log.d("HomeActivity", "이미지 로드 성공")
+            val imageBitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, false)
+            val fileUri = saveBitmapToFile(imageBitmap)
+            fileUri?.let {
+                Log.d("HomeActivity", "이미지 파일 저장 성공: $fileUri")
+                when (clickedButton) {
+                    "pillNum" -> {
+                        val intent = Intent(this, ResultPillNumActivity::class.java)
+                        intent.putExtra("imageUri", fileUri.toString())
+                        startActivity(intent)
                     }
-                } ?: run {
-                    Log.e("HomeActivity", "이미지 로드 실패")
-                    Toast.makeText(this, "사진을 가져오는 데 문제가 발생했습니다.", Toast.LENGTH_SHORT).show()
+                    "pillSearch" -> {
+                        val intent = Intent(this, ResultPillSearchCameraActivity::class.java)
+                        intent.putExtra("imageUri", fileUri.toString())
+                        startActivity(intent)
+                    }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("HomeActivity", "이미지 처리 중 오류 발생: ${e.message}")
-                Toast.makeText(this, "이미지 처리 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("HomeActivity", "이미지 처리 중 오류 발생: ${e.message}")
+            Toast.makeText(this, "이미지 처리 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
         }
     }
 }

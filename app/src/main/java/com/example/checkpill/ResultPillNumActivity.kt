@@ -5,38 +5,55 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.checkpill.data.PillInventoryStore
 import com.example.checkpill.databinding.ActivityResultPillNumBinding
+import com.example.checkpill.model.PillInventoryRecord
+import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_OUT
+import com.example.checkpill.notification.LowStockNotifier
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ResultPillNumActivity : AppCompatActivity() {
     lateinit var binding: ActivityResultPillNumBinding
     private lateinit var tflite: Interpreter
+    private lateinit var inventoryStore: PillInventoryStore
+    private lateinit var lowStockNotifier: LowStockNotifier
+    private var detectedPillCount: Int = 0
+    private var capturedImageUri: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityResultPillNumBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        inventoryStore = PillInventoryStore(this)
+        lowStockNotifier = LowStockNotifier(this)
 
         // YOLO 모델 로딩
         loadModel()
 
         // 이미지 URI를 받아서 이미지 표시
         val imageUri = intent.getStringExtra("imageUri")
+        capturedImageUri = imageUri
         imageUri?.let {
             val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, Uri.parse(it)).copy(Bitmap.Config.ARGB_8888, true)
             binding.medicineIv.setImageBitmap(bitmap)
 
             // YOLO 모델을 사용하여 알약 개수 계산 및 시각화
-            val pillCount = detectPills(bitmap)
-            binding.detectResultNumTV.text = "인식된 알약의 개수: $pillCount"
+            detectedPillCount = detectPills(bitmap)
+            binding.detectResultNumTV.text = "인식된 알약의 개수: $detectedPillCount"
+            binding.pillCountEditText.setText(detectedPillCount.toString())
+        }
+
+        binding.saveInventoryButton.setOnClickListener {
+            saveInventoryRecord()
         }
 
         // 확인 버튼
@@ -45,8 +62,46 @@ class ResultPillNumActivity : AppCompatActivity() {
         }
 
         binding.backButton.setOnClickListener {
-            onBackPressed()
+            onBackPressedDispatcher.onBackPressed()
         }
+    }
+
+    private fun saveInventoryRecord() {
+        val pillName = binding.pillNameEditText.text.toString().trim()
+        if (pillName.isBlank()) {
+            Toast.makeText(this, "알약 이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val pillCount = binding.pillCountEditText.text.toString().toIntOrNull() ?: 0
+        if (pillCount <= 0) {
+            Toast.makeText(this, "저장할 알약 개수가 없습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val now = Date()
+        val dateFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.KOREA)
+        val transactionType = if (binding.outboundRadioButton.isChecked) {
+            TYPE_OUT
+        } else {
+            PillInventoryRecord.TYPE_IN
+        }
+        val expirationDate = binding.expirationDateEditText.text.toString().trim()
+        val record = PillInventoryRecord(
+            pillName = pillName,
+            pillCount = pillCount,
+            savedAtMillis = now.time,
+            savedAtText = dateFormat.format(now),
+            transactionType = transactionType,
+            expirationDateText = expirationDate.ifBlank { null },
+            photoUri = capturedImageUri
+        )
+
+        inventoryStore.addRecord(record)
+        lowStockNotifier.notifyIfLowStock(pillName, inventoryStore)
+        Toast.makeText(this, "재고가 저장되었습니다.", Toast.LENGTH_SHORT).show()
+        binding.saveInventoryButton.isEnabled = false
+        binding.saveInventoryButton.text = "저장 완료"
     }
 
     // YOLO 모델 로딩 함수
@@ -66,6 +121,11 @@ class ResultPillNumActivity : AppCompatActivity() {
 
     // YOLO 모델을 사용하여 알약을 인식하는 함수
     private fun detectPills(bitmap: Bitmap): Int {
+        if (!::tflite.isInitialized) {
+            Toast.makeText(this, "알약 인식 모델을 불러오지 못했습니다.", Toast.LENGTH_SHORT).show()
+            return 0
+        }
+
         // 이미지를 YOLO 모델 입력 형식에 맞게 변환
         val inputSize = 640 // 모델이 학습된 입력 크기
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, false)

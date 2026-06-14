@@ -104,5 +104,47 @@
                     android:src="@drawable/ic_num" />
             </androidx.cardview.widget.CardView>
         </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/home_inventory_CV"
+            android:layout_width="342dp"
+            android:layout_height="128dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="32dp"
+            android:clipChildren="false"
+            app:cardBackgroundColor="@color/boxColor"
+            app:cardCornerRadius="15dp"
+            app:cardElevation="6dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/home_bottom_box_CL">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="22dp"
+                android:layout_marginTop="20dp"
+                android:text="재고 조회"
+                android:textColor="@color/boxTextColor2"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="190dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="22dp"
+                android:layout_marginTop="56dp"
+                android:text="저장한 알약 수량과 날짜를 확인하세요."
+                android:textColor="@color/boxTextColor1"
+                android:textSize="12sp" />
+
+            <ImageView
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+                android:layout_marginStart="260dp"
+                android:layout_marginTop="58dp"
+                android:src="@drawable/ic_num" />
+        </androidx.cardview.widget.CardView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

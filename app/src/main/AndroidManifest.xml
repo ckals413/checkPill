@@ -4,17 +4,13 @@
 
     <!-- 인터넷 권한 -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 외부 저장소 읽기 권한 -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <!-- 카메라 권한 -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <!-- 외부 저장소 쓰기 권한 (필요할 경우) -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <!-- 읽기권한 -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <!-- 알림 권한 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
 
     <application
@@ -41,6 +37,14 @@
             android:exported="true"
             />
 
+        <activity
+            android:name=".SyncActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".InventoryActivity"
+            android:exported="false" />
+
 
         <activity android:name=".PillSearchActivity"
             android:exported="false" />
@@ -52,6 +56,10 @@
 
         <activity
             android:name=".HomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

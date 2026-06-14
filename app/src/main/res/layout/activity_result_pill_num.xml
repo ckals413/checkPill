@@ -1,20 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/white"
+    android:fillViewport="true">
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="640dp">
 
 
 
     <!-- Header and Warning Boxes -->
     <ImageView
         android:id="@+id/back_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="40dp"
+        android:contentDescription="뒤로가기"
+        android:padding="10dp"
+        android:src="@drawable/ic_back"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
@@ -31,19 +40,22 @@
     <ImageView
         android:id="@+id/medicine_iv"
         android:layout_width="250dp"
-        android:layout_height="250dp"
+        android:layout_height="230dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pill_search_logo"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="32dp"
         android:scaleType="fitCenter"
         />
 
     <TextView
         android:id="@+id/detect_resultNum_TV"
-        android:layout_marginTop="40dp"
-        android:layout_width="wrap_content"
+        android:layout_marginTop="28dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:gravity="center"
         android:text="인식 된 알약의 개수는 n개 입니다."
         android:textSize="20sp"
         android:textStyle="bold"
@@ -52,20 +64,128 @@
         app:layout_constraintEnd_toEndOf="parent"
         />
 
+    <EditText
+        android:id="@+id/pill_name_edit_text"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="32dp"
+        android:background="@drawable/search_background"
+        android:hint="알약 이름을 입력하세요"
+        android:inputType="text"
+        android:maxLines="1"
+        android:paddingHorizontal="16dp"
+        android:textColor="@color/boxTextColor1"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/detect_resultNum_TV" />
+
+    <EditText
+        android:id="@+id/pill_count_edit_text"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="32dp"
+        android:background="@drawable/search_background"
+        android:hint="알약 개수를 수정하세요"
+        android:inputType="number"
+        android:maxLines="1"
+        android:paddingHorizontal="16dp"
+        android:textColor="@color/boxTextColor1"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pill_name_edit_text" />
+
+    <RadioGroup
+        android:id="@+id/transaction_type_group"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="32dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pill_count_edit_text">
+
+        <RadioButton
+            android:id="@+id/inbound_radio_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="입고"
+            android:textColor="@color/boxTextColor1"
+            android:textSize="15sp" />
+
+        <RadioButton
+            android:id="@+id/outbound_radio_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:text="출고"
+            android:textColor="@color/boxTextColor1"
+            android:textSize="15sp" />
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/expiration_date_edit_text"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="32dp"
+        android:background="@drawable/search_background"
+        android:hint="유통기한 예: 2026.12.31"
+        android:inputType="date"
+        android:maxLines="1"
+        android:paddingHorizontal="16dp"
+        android:textColor="@color/boxTextColor1"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/transaction_type_group" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/save_inventory_button"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="32dp"
+        android:background="@drawable/option_background_noncolor"
+        android:text="재고 저장"
+        android:textColor="@color/boxTextColor1"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/expiration_date_edit_text" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/check_combination_button"
-        android:layout_width="352dp"
-        android:layout_height="68dp"
+        android:layout_width="0dp"
+        android:layout_height="58dp"
         android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="32dp"
-        android:layout_marginBottom="50dp"
+        android:layout_marginBottom="32dp"
         android:background="@drawable/option_background_noncolor"
         android:text="확인"
         android:textColor="@color/boxTextColor1"
         android:textStyle="bold"
-        android:textSize="22sp"
+        android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/save_inventory_button"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

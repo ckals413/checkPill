@@ -36,6 +36,13 @@ class HomeFragment : Fragment() {
         binding.homePillNumCV.setOnClickListener {
             (activity as? HomeActivity)?.startPillCount()
         }
+
+        binding.homeInventoryCV.setOnClickListener {
+            context?.let {
+                val intent = Intent(it, InventoryActivity::class.java)
+                startActivity(intent)
+            }
+        }
     }
 
     override fun onDestroyView() {
