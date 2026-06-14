@@ -16,10 +16,12 @@ import com.example.checkpill.databinding.ActivityInventoryBinding
 import com.example.checkpill.model.PillInventoryRecord
 import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_IN
 import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_OUT
+import com.example.checkpill.notification.LowStockNotifier
 
 class InventoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInventoryBinding
     private lateinit var store: PillInventoryStore
+    private lateinit var lowStockNotifier: LowStockNotifier
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +29,7 @@ class InventoryActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         store = PillInventoryStore(this)
+        lowStockNotifier = LowStockNotifier(this)
 
         binding.backButton.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
@@ -122,6 +125,7 @@ class InventoryActivity : AppCompatActivity() {
                         expirationDateText = expirationEditText.text.toString().trim().ifBlank { null }
                     )
                 )
+                lowStockNotifier.notifyIfLowStock(name, store)
                 Toast.makeText(this, "재고 기록이 수정되었습니다.", Toast.LENGTH_SHORT).show()
                 renderInventory()
             }
@@ -135,6 +139,7 @@ class InventoryActivity : AppCompatActivity() {
             .setNegativeButton("취소", null)
             .setPositiveButton("삭제") { _, _ ->
                 store.deleteRecord(record)
+                lowStockNotifier.notifyIfLowStock(record.pillName, store)
                 Toast.makeText(this, "재고 기록이 삭제되었습니다.", Toast.LENGTH_SHORT).show()
                 renderInventory()
             }

@@ -11,6 +11,7 @@ import com.example.checkpill.data.PillInventoryStore
 import com.example.checkpill.databinding.ActivityResultPillNumBinding
 import com.example.checkpill.model.PillInventoryRecord
 import com.example.checkpill.model.PillInventoryRecord.Companion.TYPE_OUT
+import com.example.checkpill.notification.LowStockNotifier
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -24,6 +25,7 @@ class ResultPillNumActivity : AppCompatActivity() {
     lateinit var binding: ActivityResultPillNumBinding
     private lateinit var tflite: Interpreter
     private lateinit var inventoryStore: PillInventoryStore
+    private lateinit var lowStockNotifier: LowStockNotifier
     private var detectedPillCount: Int = 0
     private var capturedImageUri: String? = null
 
@@ -32,6 +34,7 @@ class ResultPillNumActivity : AppCompatActivity() {
         binding = ActivityResultPillNumBinding.inflate(layoutInflater)
         setContentView(binding.root)
         inventoryStore = PillInventoryStore(this)
+        lowStockNotifier = LowStockNotifier(this)
 
         // YOLO 모델 로딩
         loadModel()
@@ -95,6 +98,7 @@ class ResultPillNumActivity : AppCompatActivity() {
         )
 
         inventoryStore.addRecord(record)
+        lowStockNotifier.notifyIfLowStock(pillName, inventoryStore)
         Toast.makeText(this, "재고가 저장되었습니다.", Toast.LENGTH_SHORT).show()
         binding.saveInventoryButton.isEnabled = false
         binding.saveInventoryButton.text = "저장 완료"

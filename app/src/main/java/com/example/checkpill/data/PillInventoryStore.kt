@@ -42,6 +42,12 @@ class PillInventoryStore(context: Context) {
             .sortedBy { it.first }
     }
 
+    fun getTotalCountForPill(pillName: String): Int {
+        return getRecords()
+            .filter { it.pillName == pillName }
+            .sumOf { it.signedCount() }
+    }
+
     private fun migrateSharedPreferencesIfNeeded() {
         if (prefs.getBoolean(KEY_MIGRATED_TO_ROOM, false)) {
             return
